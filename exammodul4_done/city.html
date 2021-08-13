@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+        function showAll() {
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/cities",
+                success: function (data) {
+                    console.log(data);
+                    let content = '   <table class="table table-striped"><tr>\n' +
+                        '        <td>Name</td>\n' +
+                        '        <td>area</td>\n' +
+                        '        <td>population</td>\n' +
+                        '        <td>description</td>\n' +
+                        '        <td>GDP</td>\n' +
+                        '        <td>country</td>\n' +
+                        '    </tr>';
+                    for (let i = 0; i < data.length; i++) {
+                        content += getCity(data[i]);
+                    }
+                    content += "</table>";
+                    document.getElementById('main').innerHTML = content;
+                }
+            });
+        }
+        function getCity(city) {
+            return `<tr><td><a href="#" onclick="detail(${city.id})" class="btn btn-primary">${city.name}</a></td><td >${city.area}</td><td>${city.population}</td><td>${city.description}</td><td>${city.gdp}</td></td><td>${city.country.name}</td>` +
+                `<td><a class="btn btn-danger" onclick="deleteCity(${city.id})">Delete</a></td><td><a class="btn btn-warning" onclick="editCity(${city.id})" >Edit</a></td></tr>`;
+        }
+        function showFormCreate(){
+            $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                type: "GET",
+                url: "http://localhost:8080/api/countries",
+                success: function (data) {
+                    let str = "";
+                    str += "<form enctype=\"multipart/form-data\" id=\"add-city\">\n" +
+                        "    <table class='table table-striped'>\n" +
+                        "        </tr>\n" +
+                        "            <td>name:</td>\n" +
+                        "            <td><input type=\"text\" id=\"name\" placeholder=\"name\"></td>\n" +
+                        "        </tr>\n" +
+                        "        <tr>\n" +
+                        "            <td>area:</td>\n" +
+                        "            <td><input type=\"text\" id=\"area\" placeholder=\"area\"></td>\n" +
+                        "        </tr>\n" +
+                        "        <tr>\n" +
+                        "            <td>population:</td>\n" +
+                        "            <td><input type=\"text\" id =\"population\" placeholder=\"population\"></td>\n" +
+                        "        </tr>\n" +
+                        "        <tr>\n" +
+                        "            <td>description:</td>\n" +
+                        "            <td><input type=\"text\" id =\"description\" placeholder=\"description\"></td>\n" +
+                        "        </tr>\n" +
+                        "        <tr>\n" +
+                        "            <td>gdp:</td>\n" +
+                        "            <td><input type=\"text\" id =\"gdp\" placeholder=\"gdp\"></td>\n" +
+                        "        <tr>\n" +
+                        "            <td>country:</td>\n" +
+                        "            <td><select id ='country'> ";
+                    for (let i = 0; i < data.length; i++) {
+                        str += "<option value='" + data[i].id + "'>" + data[i].name + "</option>"
+                    }
+                    str += "</select>";
+                    str +=
+                        " </td>\n" +
+                        "        </tr>\n" +
+                        "        <tr>\n" +
+                        "            <td></td>\n" +
+                        "            <td><button class='btn btn-success' type=\"button\" onclick=\"addNewCity()\">SAVE</button></td>\n" +
+                        "        </tr>\n" +
+                        "    </table>\n" +
+                        "</form>";
+                    document.getElementById('main').innerHTML = str;
+                    // document.getElementById("create").innerHTML = "";
+                }
+            })
+        }
+        function addNewCity(){
+            let name = $('#name').val();
+            let area = $('#area').val();
+            let population = $('#population').val();
+            let description = $('#description').val();
+            let gdp = $('#gdp').val();
+            let country= $('#country').val();
+            let newCity = {
+                name: name,
+                area: area,
+                population: population,
+                description : description ,
+                gdp: gdp,
+                country: {
+                    id:country
+                }
+            };
+
+            $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                type: "POST",
+                data: JSON.stringify(newCity),
+                url: "http://localhost:8080/api/cities",
+                success: showAll
+            });
+            event.preventDefault();
+        }
+        function deleteCity(id){
+            let check = confirm("Are you sure to delete ??? ");
+            if(check == true){
+                $.ajax({
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    type: "DELETE",
+                    data: JSON.stringify(id),
+                    url: "http://localhost:8080/api/cities/" + id,
+                    success: showAll
+                })
+            }
+        }
+        function editCity(id){
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/cities/" + id,
+                success: function (city) {
+                    let name = city.name;
+                    let area = city.area;
+                    let population = city.population;
+                    let description = city.description;
+                    let gdp = city.gdp;
+                    let country = city.country;
+                    let str = `<input type="hidden" id="edit-id" value="${id}"><table class='table table-dark table-striped'>
+                            <tr>
+                                <td>name:</td>
+                                <td><input type="text" id="edit-name" value=${name}></td>
+                           </tr>
+                           <tr>
+                                <td>area:</td>
+                                <td><input type="text" id="edit-area" value=${area}></td>
+                           </tr>
+                           <tr>
+                                <td>population:</td>
+                                <td><input type="text" id="edit-population" value=${population}></td>
+                           </tr>
+                           <tr>
+                                <td>description:</td>
+                                <td><input type="text" id="edit-description" value=${description}></td>
+                           </tr>
+                           <tr>
+                                <td>gdp:</td>
+                                <td><input type="text" id="edit-gdp" value=${gdp}></td>
+                           </tr>
+                           <tr>
+                                <td>country:</td>
+                               <td>
+                               <select id="edit-country">
+                                  ` + getCountry() + `
+                               </select>
+                               </td>
+                           </tr>
+                           <tr>
+                                <td></td>
+                               <td><button type="button" id="save" onclick="updateCity()" >Save</td>
+                           </tr>
+                       </table>`;
+
+
+                    document.getElementById("main").innerHTML = str;
+
+                }
+            });
+            event.preventDefault();
+        }
+        function getCountry() {
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/countries",
+                success: function (list) {
+                    console.log(list)
+                    let str = "";
+                    for (let i = 0; i < list.length; i++) {
+                        str += "<option id='id-edit' value='" + list[i].id + "'>" + list[i].name + "</option>\n";
+
+                    }
+                    document.getElementById("edit-country").innerHTML = str;
+                }
+            });
+        }
+        function updateCity(){
+            let id = document.getElementById("edit-id").value;
+            let name = document.getElementById("edit-name").value;
+            let area = document.getElementById("edit-area").value;
+            let population = document.getElementById("edit-population").value;
+            let description = document.getElementById("edit-description").value;
+            let gdp = document.getElementById("edit-gdp").value;
+            let countryId = document.getElementById("edit-country").value;
+            console.log(countryId);
+            let city = {
+                "name": name,
+                "area": area,
+                "population": population,
+                "description": description,
+                "gdp": gdp,
+                "country": {
+                    "id": countryId
+                }
+            }
+            $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-type': 'application/json'
+                },
+                type: "PUT",
+                data: JSON.stringify(city),
+                url: "http://localhost:8080/api/cities/" + id,
+                success: showAll
+            })
+            event.preventDefault();
+        }
+        function detail(id){
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8080/api/cities/" + id,
+                success: function (data) {
+                    console.log(data);
+                    document.getElementById("detail").innerHTML = `<div style="text-align: center">
+<h3>IMFORMATION CITY</h3>
+<p>name:${data.name}</p>
+<p>area:${data.area}</p>
+<p>population:${data.population}</p>
+<p>description:${data.description}</p>
+<p>gdp:${data.gdp}</p>
+<p>country:${data.country.name}</p>
+</div>`;
+
+                }
+            });
+            event.preventDefault();
+
+        }
+    </script>
+</head>
+<body onload="showAll()">
+<div class="container">
+    <div class="row">
+        <div class="col-4">
+            <div id="create">
+                <button class="btn btn-success" onclick="showFormCreate()" type="button">AddNewCity</button>
+            </div>
+            <div class="col-4"><button class="btn btn-primary" onclick="showAll()">HOME</button></div>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div id="main"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div id="detail"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
